@@ -190,6 +190,13 @@ def format_user_info_from_data(data: dict, status_code: int | None = None):
 	return {'success': False, 'error': 'Failed to get user info: Invalid response'}
 
 
+def is_already_checked_in_message(message: str) -> bool:
+	"""Return True when a check-in error message means the account is already checked in."""
+	normalized = (message or '').lower()
+	already_checked_keywords = ['今日已签到', '已经签到', '已签到', '重复签到', 'already checked', 'already signed']
+	return any(keyword in normalized for keyword in already_checked_keywords)
+
+
 async def execute_browser_api_request(page, url: str, method: str, headers: dict):
 	"""Execute API request in Playwright browser context to avoid WAF blocking httpx."""
 	return await page.evaluate(
@@ -281,8 +288,7 @@ async def check_in_account_with_browser(account: AccountConfig, account_index: i
 							success = True
 						else:
 							error_msg = result.get('msg', result.get('message', 'Unknown error'))
-							already_checked_keywords = ['????', '???', '????', 'already checked', 'already signed']
-							if any(keyword in error_msg.lower() for keyword in already_checked_keywords):
+							if is_already_checked_in_message(error_msg):
 								print(f'[SUCCESS] {account_name}: Already checked in today')
 								success = True
 							else:
@@ -343,7 +349,7 @@ def execute_check_in(client, account_name: str, provider_config, headers: dict):
 			else:
 				error_msg = result.get('msg', result.get('message', 'Unknown error'))
 				# 检查是否是"已经签到过"的情况，这种情况也算成功
-				already_checked_keywords = ['已经签到', '已签到', '重复签到', 'already checked', 'already signed']
+				already_checked_keywords = ['今日已签到', '已经签到', '已签到', '重复签到', 'already checked', 'already signed']
 				if any(keyword in error_msg.lower() for keyword in already_checked_keywords):
 					print(f'[SUCCESS] {account_name}: Already checked in today')
 					return True
