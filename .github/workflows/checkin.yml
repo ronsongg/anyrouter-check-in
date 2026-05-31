@@ -71,6 +71,7 @@ jobs:
 
     - name: 执行签到
       env:
+        ALL_SECRETS_JSON: ${{ toJson(secrets) }}
         ANYROUTER_ACCOUNTS: ${{ secrets.ANYROUTER_ACCOUNTS }}
         PROVIDERS: ${{ secrets.PROVIDERS }}
         DINGDING_WEBHOOK: ${{ secrets.DINGDING_WEBHOOK }}
