@@ -9,6 +9,7 @@ import json
 import os
 import sys
 from datetime import datetime
+from urllib.parse import urlparse
 
 import httpx
 from dotenv import load_dotenv
@@ -65,6 +66,27 @@ def parse_cookies(cookies_data):
 	return {}
 
 
+
+
+def build_browser_cookie_items(domain: str, cookies: dict) -> list[dict]:
+	"""Build Playwright cookie objects using domain/path format.
+
+	Playwright accepts either `url` or (`domain` + `path`) for each cookie.
+	Using both `url` and `path` raises: "Cookie should have either url or path".
+	"""
+	hostname = urlparse(domain).hostname
+	if not hostname:
+		return []
+
+	return [
+		{
+			'name': name,
+			'value': value,
+			'domain': hostname,
+			'path': '/',
+		}
+		for name, value in cookies.items()
+	]
 async def get_waf_cookies_with_playwright(account_name: str, login_url: str, required_cookies: list[str]):
 	"""使用 Playwright 获取 WAF cookies（隐私模式）"""
 	print(f'[PROCESSING] {account_name}: Starting browser to get WAF cookies...')
@@ -213,9 +235,7 @@ async def check_in_account_with_browser(account: AccountConfig, account_index: i
 			)
 			page = await context.new_page()
 			try:
-				cookie_items = []
-				for name, value in user_cookies.items():
-					cookie_items.append({'name': name, 'value': value, 'url': provider_config.domain, 'path': '/'})
+				cookie_items = build_browser_cookie_items(provider_config.domain, user_cookies)
 				if cookie_items:
 					await context.add_cookies(cookie_items)
 
