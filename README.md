@@ -205,7 +205,8 @@
     "user_info_path": "/api/profile",
     "api_user_key": "New-Api-User",
     "bypass_method": "waf_cookies",
-    "waf_cookie_names": ["acw_tc", "cdn_sec_tc", "acw_sc__v2"]
+    "waf_cookie_names": ["acw_tc", "cdn_sec_tc", "acw_sc__v2"],
+    "request_method": "browser"
   }
 }
 ```
@@ -214,6 +215,7 @@
 
 - 不设置或设置为 `null`：直接使用用户提供的 cookies 进行请求（适合无 WAF 保护的网站）
 - 设置为 `"waf_cookies"`：使用 Playwright 打开浏览器获取 WAF cookies 后再进行请求（适合有 WAF 保护的网站）
+- 如果日志显示已成功获取 WAF Cookie，但后续 `/api/user/self` 仍返回 403，可额外设置 `"request_method": "browser"`，让 API 请求也在浏览器上下文中执行
 
 > 注：`anyrouter` 和 `agentrouter` 已内置默认配置，无需在 `PROVIDERS` 中配置
 
@@ -235,6 +237,7 @@
   - `"waf_cookies"`：使用 Playwright 打开浏览器获取 WAF cookies 后再执行签到
   - 不设置或 `null`：直接使用用户 cookies 执行签到（适合无 WAF 保护的网站）
 - `waf_cookie_names` (可选)：绕过 WAF 所需 cookie 的名称列表，`bypass_method` 为 `waf_cookies` 时必须设置
+- `request_method` (可选)：API 请求执行方式，默认为 `httpx`；设置为 `"browser"` 时会在 Playwright 浏览器上下文中执行 `/api/user/self` 与签到请求，适合 Cloudflare 等严格校验浏览器指纹、导致 `httpx` 即使携带 WAF Cookie 仍返回 403 的站点
 
 **配置示例**（完整）：
 

@@ -21,6 +21,7 @@ class ProviderConfig:
 	api_user_key: str = 'new-api-user'
 	bypass_method: Literal['waf_cookies'] | None = None
 	waf_cookie_names: List[str] | None = None
+	request_method: Literal['httpx', 'browser'] = 'httpx'
 
 	def __post_init__(self):
 		required_waf_cookies = set()
@@ -38,6 +39,10 @@ class ProviderConfig:
 
 		self.waf_cookie_names = list(required_waf_cookies)
 
+		if self.request_method not in ('httpx', 'browser'):
+			print(f'[WARNING] Invalid request_method: {self.request_method}, fallback to httpx')
+			self.request_method = 'httpx'
+
 	@classmethod
 	def from_dict(cls, name: str, data: dict) -> 'ProviderConfig':
 		"""从字典创建 ProviderConfig
@@ -54,7 +59,8 @@ class ProviderConfig:
 			user_info_path=data.get('user_info_path', '/api/user/self'),
 			api_user_key=data.get('api_user_key', 'new-api-user'),
 			bypass_method=data.get('bypass_method'),
-			waf_cookie_names = data.get('waf_cookie_names'),
+			waf_cookie_names=data.get('waf_cookie_names'),
+			request_method=data.get('request_method', 'httpx'),
 		)
 
 	def needs_waf_cookies(self) -> bool:
@@ -65,6 +71,9 @@ class ProviderConfig:
 		"""判断是否需要手动调用签到接口"""
 		return self.sign_in_path is not None
 
+	def uses_browser_requests(self) -> bool:
+		"""Return whether API requests should run in browser context."""
+		return self.request_method == 'browser'
 
 @dataclass
 class AppConfig:
